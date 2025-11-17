@@ -256,14 +256,14 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT © [Your Name]
+MIT © Sumit Patel
 
 ## 🔗 Links
 
 - [TOON Specification](https://github.com/toon-format/toon)
-- [GitHub Repository](https://github.com/yourusername/json2toon)
+- [GitHub Repository](https://github.com/slkpatel/json2toon.git)
 - [npm Package](https://www.npmjs.com/package/json2toon)
-- [Report Issues](https://github.com/yourusername/json2toon/issues)
+- [Report Issues](https://github.com/slkpatel/json2toon/issues)
 
 ## Acknowledgments
 
