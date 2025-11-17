@@ -31,16 +31,16 @@
     "cost-savings",
     "compression"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "Sumit Patel <sumit.lk.patel@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/json-to-toon.git"
+    "url": "https://github.com/slkpatel/json2toon.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/json-to-toon/issues"
+    "url": "https://github.com/slkpatel/json2toon/issues"
   },
-  "homepage": "https://github.com/yourusername/json-to-toon#readme",
+  "homepage": "https://github.com/slkpatel/json2toon#readme",
   "files": [
     "dist",
     "README.md",
