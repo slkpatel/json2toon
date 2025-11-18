@@ -2,7 +2,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { jsonToToon, formatStats, ConversionResult } from './index';
+import { jsonToToon, formatStats, ConversionResult, toonToJson } from './index';
 
 interface CliOptions {
   input?: string;
@@ -12,6 +12,7 @@ interface CliOptions {
   sortKeys?: boolean;
   help?: boolean;
   version?: boolean;
+  json?: boolean;
 }
 
 function showHelp(): void {
@@ -29,6 +30,7 @@ OPTIONS:
   --sort-keys           Sort object keys alphabetically
   -h, --help            Show this help message
   -v, --version         Show version number
+  -j, --json           Convert TOON to JSON (reverse conversion)
 
 EXAMPLES:
   # Convert from file
@@ -45,6 +47,9 @@ EXAMPLES:
 
   # Show stats and save output
   json2toon -i data.json -o output.toon -s
+
+  # Convert TOON to JSON
+  json2toon -i data.toon -j -o output.json
 `);
 }
 
@@ -93,6 +98,11 @@ function parseArgs(args: string[]): CliOptions {
       
       case '--sort-keys':
         options.sortKeys = true;
+        break;
+      
+      case '-j':
+      case '--json':
+        options.json = true;
         break;
       
       default:
@@ -145,37 +155,47 @@ async function main(): Promise<void> {
   
   try {
     // Read input
-    const jsonStr = await readInput(options.input);
-    
-    // Parse JSON
-    let jsonData: any;
-    try {
-      jsonData = JSON.parse(jsonStr);
-    } catch (error) {
-      console.error('Error: Invalid JSON input');
-      console.error((error as Error).message);
-      process.exit(1);
-    }
-    
-    // Convert to TOON
-    const result = jsonToToon(jsonData, {
-      indent: options.indent,
-      sortKeys: options.sortKeys,
-      includeStats: options.stats || false
-    });
-    
-    // Handle output
-    if (typeof result === 'string') {
-      writeOutput(result + '\n', options.output);
+    const inputStr = await readInput(options.input);
+
+    let outputStr: string;
+    if (options.json) {
+      // TOON to JSON conversion
+      let jsonData: any;
+      try {
+        jsonData = toonToJson(inputStr);
+      } catch (error) {
+        console.error('Error: Invalid TOON input');
+        console.error((error as Error).message);
+        process.exit(1);
+      }
+      outputStr = JSON.stringify(jsonData, null, options.indent || 2);
     } else {
-      const convResult = result as ConversionResult;
-      writeOutput(convResult.toon + '\n', options.output);
-      
-      if (options.stats) {
-        console.error('\n' + formatStats(convResult.stats!));
+      // JSON to TOON conversion
+      let jsonData: any;
+      try {
+        jsonData = JSON.parse(inputStr);
+      } catch (error) {
+        console.error('Error: Invalid JSON input');
+        console.error((error as Error).message);
+        process.exit(1);
+      }
+      const result = jsonToToon(jsonData, {
+        indent: options.indent,
+        sortKeys: options.sortKeys,
+        includeStats: options.stats || false
+      });
+      if (typeof result === 'string') {
+        outputStr = result + '\n';
+      } else {
+        const convResult = result as ConversionResult;
+        outputStr = convResult.toon + '\n';
+        if (options.stats) {
+          console.error('\n' + formatStats(convResult.stats!));
+        }
       }
     }
-    
+    // Handle output
+    writeOutput(outputStr, options.output);
   } catch (error) {
     console.error('Error:', (error as Error).message);
     process.exit(1);

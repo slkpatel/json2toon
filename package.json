@@ -1,6 +1,6 @@
 {
   "name": "json2toon",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Convert JSON to TOON (Token-Oriented Object Notation) format with token counting and cost analysis",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
