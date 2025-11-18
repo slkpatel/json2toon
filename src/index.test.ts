@@ -1,4 +1,4 @@
-import { jsonToToon, formatStats, ConversionResult } from './index';
+import { jsonToToon, formatStats, ConversionResult, toonToJson } from './index';
 
 describe('jsonToToon', () => {
   describe('Simple Objects', () => {
@@ -176,5 +176,42 @@ describe('jsonToToon', () => {
       expect(result).toContain('name: Alice');
       expect(result).toContain('age: 30');
     });
+  });
+});
+
+describe('toonToJson', () => {
+  test('parses simple key-value TOON', () => {
+    const toon = `name: Alice\nage: 30\nactive: true`;
+    expect(toonToJson(toon)).toEqual({ name: 'Alice', age: 30, active: true });
+  });
+
+  test('parses nested objects', () => {
+    const toon = `user:\n  name: Bob\n  address:\n    city: New York\n    zip: 10001`;
+    expect(toonToJson(toon)).toEqual({ user: { name: 'Bob', address: { city: 'New York', zip: 10001 } } });
+  });
+
+  test('parses tabular arrays', () => {
+    const toon = `users[2]{id,name,role}:\n  1,Alice,admin\n  2,Bob,user`;
+    expect(toonToJson(toon)).toEqual({ users: [ { id: '1', name: 'Alice', role: 'admin' }, { id: '2', name: 'Bob', role: 'user' } ] });
+  });
+
+  test('parses non-tabular arrays', () => {
+    const toon = `mixed[4]:\n  1\n  string\n  true\n  null`;
+    expect(toonToJson(toon)).toEqual({ mixed: [ '1', 'string', true, null ] });
+  });
+
+  test('parses deeply nested structure', () => {
+    const toon = `company:\n  name: Tech Corp\n  departments[1]:\n    name: Engineering\n    employees[2]{id,name}:\n      1,Alice\n      2,Bob`;
+    expect(toonToJson(toon)).toEqual({ company: { name: 'Tech Corp', departments: [ { name: 'Engineering', employees: [ { id: '1', name: 'Alice' }, { id: '2', name: 'Bob' } ] } ] } });
+  });
+
+  test('parses boolean and null values', () => {
+    const toon = `isActive: true\nisDeleted: false\nvalue: null`;
+    expect(toonToJson(toon)).toEqual({ isActive: true, isDeleted: false, value: null });
+  });
+
+  test('parses numbers including zero', () => {
+    const toon = `count: 0\nprice: 99.99\nnegative: -5`;
+    expect(toonToJson(toon)).toEqual({ count: 0, price: 99.99, negative: -5 });
   });
 });

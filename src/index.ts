@@ -241,12 +241,97 @@ export function jsonToToon(json: any, options: ToonOptions = {}): string | Conve
 
 /**
  * Converts TOON back to JSON (basic implementation)
- * Note: This is a simplified version and may not handle all edge cases
+ * Supports simple key-value pairs, nested objects, and tabular arrays
  */
 export function toonToJson(toon: string): any {
-  // This is a placeholder for the reverse conversion
-  // A full implementation would require a proper parser
-  throw new Error('TOON to JSON conversion not yet implemented');
+  // Split lines and trim whitespace
+  const lines = toon.split(/\r?\n/).map(line => line.trimEnd());
+  let idx = 0;
+
+  function parseObject(indent = 0): any {
+    const obj: any = {};
+    while (idx < lines.length) {
+      const line = lines[idx];
+      if (!line.trim()) { idx++; continue; }
+      const currentIndent = line.match(/^ */)?.[0].length || 0;
+      if (currentIndent < indent) break;
+      // Tabular array: key[n]{a,b,c}:
+      const tabularMatch = line.match(/^(\w+)\[(\d+)\]{([^}]*)}:/);
+      if (tabularMatch) {
+        const key = tabularMatch[1];
+        const count = parseInt(tabularMatch[2], 10);
+        const columns = tabularMatch[3].split(',').map(s => s.trim());
+        idx++;
+        const arr = [];
+        for (let i = 0; i < count && idx < lines.length; i++, idx++) {
+          const row = lines[idx].trim();
+          if (!row) continue;
+          // Handle quoted values
+          const values = row.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').replace(/""/g, '"')) || [];
+          const item: any = {};
+          columns.forEach((col, j) => {
+            let val: any = values[j];
+            if (val === 'null') val = null;
+            else if (val === 'true') val = true;
+            else if (val === 'false') val = false;
+            else if (!isNaN(Number(val)) && val.trim() !== '') val = Number(val);
+            item[col] = val;
+          });
+          arr.push(item);
+        }
+        obj[key] = arr;
+        continue;
+      }
+      // Non-tabular array: key[n]:
+      const arrayMatch = line.match(/^(\w+)\[(\d+)\]:/);
+      if (arrayMatch) {
+        const key = arrayMatch[1];
+        const count = parseInt(arrayMatch[2], 10);
+        idx++;
+        const arr = [];
+        for (let i = 0; i < count && idx < lines.length; i++, idx++) {
+          const arrLine = lines[idx].trim();
+          if (!arrLine) continue;
+          if (arrLine.match(/^\w+:/)) {
+            // Nested object
+            idx--;
+            arr.push(parseObject(currentIndent + 2));
+          } else {
+            arr.push(arrLine === 'null' ? null : arrLine);
+          }
+        }
+        obj[key] = arr;
+        continue;
+      }
+      // Nested object: key:
+      const nestedMatch = line.match(/^(\w+):$/);
+      if (nestedMatch) {
+        const key = nestedMatch[1];
+        idx++;
+        obj[key] = parseObject(currentIndent + 2);
+        continue;
+      }
+      // Key-value: key: value
+      const kvMatch = line.match(/^(\w+): (.+)$/);
+      if (kvMatch) {
+        const key = kvMatch[1];
+        const rawValue = kvMatch[2];
+        let parsedValue: any = rawValue;
+        if (rawValue === 'null') parsedValue = null;
+        else if (rawValue === 'true') parsedValue = true;
+        else if (rawValue === 'false') parsedValue = false;
+        else if (!isNaN(Number(rawValue)) && rawValue.trim() !== '') parsedValue = Number(rawValue);
+        obj[key] = parsedValue;
+        idx++;
+        continue;
+      }
+      idx++;
+    }
+    return obj;
+  }
+
+  // Start parsing from the top
+  return parseObject(0);
 }
 
 /**
